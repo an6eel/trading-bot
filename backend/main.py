@@ -15,8 +15,8 @@ app = FastAPI()
 
 
 @app.get('/stocks/{symbol}')
-def get_stocks(symbol: str = Path(..., title="Symbol name")):
-    data = get_stocks(symbol)
+def get_stocks(symbol: str = Path(..., title="Symbol name", )):
+    data = get_stocks_data(symbol)
     return data
 
 
@@ -25,15 +25,17 @@ def train_symbol_model(
         symbol: str = Path(..., title="Symbol name"),
         look_back: int = Query(..., title="Look back model parameter"),
         forward_days: int = Query(..., title="Forward days model parameter"),
-        epochs: int = Query(..., title="Epochs model parameter"),
 ):
     """
         TODO train task should run in queue to make a quick response
             We can make this endpoint as an websocket, and add a callback
             to the model to send the training process
     """
-    train_model(symbol, look_back, forward_days, epochs, Path('models'))
-    return {'message': 'Model saved. Predictions will be available for the next 20 days '}
+    try:
+        train_model(symbol, look_back, forward_days, 220, Path('models'))
+        return { 'trained': True }
+    except:
+        return { 'trained': False }
 
 
 @app.get('/stocks/{symbol}/predictions')
@@ -43,7 +45,6 @@ def get_symbol_predictions(
         forward_days: int = Query(..., title="Forward days model parameter")
 ):
     predictions = get_predictions(symbol, look_back, forward_days)
-    print(predictions)
     return predictions
 
 

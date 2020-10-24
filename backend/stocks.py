@@ -7,5 +7,10 @@ def yahoo_stocks(symbol, start, end):
 
 
 def get_stocks_data(symbol):
+    data = yahoo_stocks(symbol, datetime(2000, 1, 1), datetime.today())
+    close = data['Close']
     return yahoo_stocks(symbol, datetime(2000, 1, 1), datetime.today())
 
+
+def trading_bot():
+    pass

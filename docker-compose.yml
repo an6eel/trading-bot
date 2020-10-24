@@ -1,7 +1,37 @@
 version: "3.8"
 services:
-  backend:
-    build: ./backend
-    container_name: fastapi
+#  backend:
+#    build: ./backend
+#    container_name: fastapi
+#    ports:
+#      - "80:80"
+  daily_predictor:
+    build: ./stock_predictor
+    container_name: daily_predictor
+    volumes:
+    - ./stock_predictor/:/app
+    environment:
+      API_KEY: "96a77462a7a68eebbc94ffbd0e7324e48c197257465a4f5a9d5ca40dc4fb0112"
+      TRAIN_TYPE: "histoday"
+    ports:
+      - "80:80"
+  hourly_predictor:
+    build: ./stock_predictor
+    container_name: daily_predictor
+    volumes:
+      - ./stock_predictor/:/app
+    environment:
+      API_KEY: "96a77462a7a68eebbc94ffbd0e7324e48c197257465a4f5a9d5ca40dc4fb0112"
+      TRAIN_TYPE: "histohour"
+    ports:
+      - "80:80"
+  minute_predictor:
+    build: ./stock_predictor
+    container_name: daily_predictor
+    volumes:
+      - ./stock_predictor/:/app
+    environment:
+      API_KEY: "96a77462a7a68eebbc94ffbd0e7324e48c197257465a4f5a9d5ca40dc4fb0112"
+      TRAIN_TYPE: "histominute"
     ports:
       - "80:80"
