@@ -1,0 +1,19 @@
+{
+  "extends": "react-app",
+  "plugins": [ "babel" ],
+  "rules": {
+    "default-case": "off",
+    "no-lone-blocks": "off",
+    "no-template-curly-in-string": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "babel/new-cap": 0,
+    "babel/camelcase": 0,
+    "babel/no-invalid-this": 0,
+    "babel/object-curly-spacing": 0,
+    "babel/quotes": 0,
+    "babel/semi": 0,
+    "babel/no-unused-expressions": 0,
+    "no-unused-expressions": 0,
+    "babel/valid-typeof": 0
+  }
+}
