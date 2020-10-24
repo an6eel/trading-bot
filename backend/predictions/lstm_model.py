@@ -12,6 +12,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import os
+from datetime import datetime
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -99,17 +100,12 @@ def get_predictions(symbol: str, look_back: int, forward_days: int):
 
     predictions = scl.inverse_transform(y_pred.reshape(1, -1)).squeeze()
 
-    response = []
+    response = {}
 
-    date = pd.to_datetime(data.index[-1]) + timedelta(days=1)
+    date: datetime = pd.to_datetime(data.index[-1]) + timedelta(days=1)
 
     for forecast in predictions:
-        response.append(
-            {
-                'date': date.strftime("%Y-%m-%d"),
-                'value': float(forecast)
-            }
-        )
+        response[date.isoformat()] = float(forecast)
         date += timedelta(days=1)
 
     return response
