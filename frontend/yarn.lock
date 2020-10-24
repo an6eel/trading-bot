@@ -9922,6 +9922,11 @@ redent@^3.0.0:
     indent-string "^4.0.0"
     strip-indent "^3.0.0"
 
+redux-api-middleware@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/redux-api-middleware/-/redux-api-middleware-3.2.1.tgz#979473ba2bfcf78b1fd50763fe7a4bbf0c252e6e"
+  integrity sha512-LgFm9RIxjEOL1T2lVjlfsdHh6BOaduDsmmUWi2TV0F3nKrOMSCWS7AUmzgmr/wNuFzENGUC5SqklYJDNCwmuoA==
+
 redux-persist@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/redux-persist/-/redux-persist-6.0.0.tgz#b4d2972f9859597c130d40d4b146fecdab51b3a8"
