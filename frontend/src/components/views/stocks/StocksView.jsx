@@ -4,7 +4,7 @@ import _ from 'lodash'
 import {
   addStocks,
   selectStocks,
-  selectStockById, getStocks,
+  getStocks,
 } from '../../../features/stocksSlice'
 import { MainLayout } from '../../layouts/MainLayout'
 
@@ -29,7 +29,6 @@ export const StocksView = () => {
     <MainLayout>
       StocksView
       {_.map(stocks, s => s.name)}
-
       <button onClick={onAdd}>Add</button>
     </MainLayout>
   )

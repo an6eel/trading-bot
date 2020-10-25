@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { mainAPIBase } from '../../environmnet'
+import { mainAPIBase } from '../../environment'
 
 const base = mainAPIBase
 const addEndpoint = route => ({
