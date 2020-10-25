@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Path, Query
 from predictions.lstm_model import train_model, get_predictions
-from stocks import get_stocks_data
+from stocks import get_stocks_data, get_symbols
 from predictions.prophet import get_predictions_prophet
+from pathlib import Path
 
 app = FastAPI()
+
 
 # TODO This will be the model for the data stored in the db, to avoid sending
 #     the same data for the train and predictions endpoints
@@ -25,15 +27,18 @@ def train_symbol_model(
         symbol: str = Path(..., title="Symbol name"),
         look_back: int = Query(..., title="Look back model parameter"),
         forward_days: int = Query(..., title="Forward days model parameter"),
-        epochs: int = Query(..., title="Epochs model parameter"),
 ):
     """
         TODO train task should run in queue to make a quick response
             We can make this endpoint as an websocket, and add a callback
             to the model to send the training process
     """
-    train_model(symbol, look_back, forward_days, epochs, Path('models'))
-    return {'message': 'Model saved. Predictions will be available for the next 20 days '}
+
+    try:
+        response = train_model(symbol, look_back, forward_days, Path('models'))
+        return response
+    except:
+        return {'trained': False}
 
 
 @app.get('/stocks/{symbol}/predictions')
