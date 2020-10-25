@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import Tuple
-from keras.models import Sequential, load_model
+from keras.models import Sequential, load_model, Model
 from keras.layers import LSTM, Dense, Dropout
 from pathlib import Path
 from datetime import timedelta
@@ -13,11 +13,13 @@ from sklearn.model_selection import train_test_split
 import os
 from config import TRAIN_TYPE
 from models.training import TrainingType
-from utils import get_historic_data
 from typing import Dict
-from utils import get_date_format
 from datetime import datetime
-from prediction.ws_callback import WebsocketCallback
+from typing import Callable
+from models.StockModel import StockModelOnDB, update_model_status, TrainingStatus, update_predictions
+from db.db import AsyncIOMotorClient
+import threading
+import logging
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -53,11 +55,11 @@ def build_model(look_back: int, forward_days: int) -> Model:
 
 def get_look_back_time():
     if TRAIN_TYPE == TrainingType.DAILY:
-        return 90
+        return 120
     elif TRAIN_TYPE == TrainingType.HOURLY:
-        return 48
+        return 96
     else:
-        return 240
+        return 480
 
 
 def get_forward_day_time():
@@ -69,23 +71,21 @@ def get_forward_day_time():
         return 60
 
 
-def get_parsed_data(symbol: str):
-    data: Dict = get_historic_data(symbol)['data']
+def get_parsed_data(data: Dict[str, float]):
     dates = data.keys()
     closes = data.values()
     df = pd.DataFrame(closes, index=dates, columns=['Close'])
     return df
 
 
-def train_model(symbol: str):
-    model_file = "{}-{}-model.h5".format(symbol, TRAIN_TYPE)
-    model_path = Path("data", model_file)
-    if model_path.exists():
-        return True
+async def train_model(stock_model: StockModelOnDB, db_client: AsyncIOMotorClient):
+    logging.info("LSTM")
+    await update_model_status(db_client, str(stock_model.id), TrainingStatus.TRAINING)
+    model_path = Path(stock_model.path)
     try:
         look_back = get_look_back_time()
         forward_days = get_forward_day_time()
-        df = get_parsed_data(symbol)
+        df = get_parsed_data(stock_model.data)
         array = df.values.reshape(df.shape[0], 1)
         scl = MinMaxScaler()
         array = scl.fit_transform(array)
@@ -106,8 +106,6 @@ def train_model(symbol: str):
                                        patience=5,
                                        restore_best_weights=True)
 
-        printer = WebsocketCallback(progress_callback=lambda progress: print("Progress", progress), end_callback=lambda: print("End"))
-
         model.fit(x_train,
                   y_train,
                   epochs=100,
@@ -115,13 +113,14 @@ def train_model(symbol: str):
                   shuffle=True,
                   batch_size=128,
                   verbose=2,
-                  callbacks=(check_pointer, early_stopping, printer)
+                  callbacks=(check_pointer, early_stopping)
                   )
+        await update_model_status(db_client, str(stock_model.id), TrainingStatus.TRAINED)
+        predictions = get_predictions(df, model)
+        await update_predictions(db_client, str(stock_model.id), predictions)
         return True
-    except Exception as e:
-        print(e)
+    except :
         return False
-
 
 
 def predictions_offset():
@@ -133,11 +132,8 @@ def predictions_offset():
         return {'minutes': 1}
 
 
-def get_predictions(symbol: str):
-    model: Model = load_model("data/{}-{}-model.h5".format(symbol, TRAIN_TYPE))
-
-    data = get_parsed_data(symbol)
-    array: np.ndarray = data.values.reshape(data.shape[0], 1)
+def get_predictions(df: pd.DataFrame, model: Model):
+    array: np.ndarray = df.values.reshape(df.shape[0], 1)
     scl: MinMaxScaler = MinMaxScaler()
     array: np.ndarray = scl.fit_transform(array)
     x_test, _ = process_data(array, get_look_back_time(), get_forward_day_time())
@@ -146,17 +142,21 @@ def get_predictions(symbol: str):
 
     predictions = scl.inverse_transform(y_pred.reshape(1, -1)).squeeze()
 
-    response = []
+    response = {}
 
-    date: datetime = pd.to_datetime(data.index[-1]) + timedelta(**predictions_offset())
+    date: datetime = pd.to_datetime(df.index[-1]) + timedelta(**predictions_offset())
 
     for forecast in predictions:
-        response.append(
-            {
-                'date': date.strftime(get_date_format()),
-                'value': float(forecast)
-            }
-        )
+        response[date.isoformat()] = float(forecast)
         date += timedelta(**predictions_offset())
 
     return response
+
+
+class AsyncTrainer(threading.Thread):
+    
+    def __init__(self, fn, args):
+        threading.Thread.__init__(self, target=fn, args=args)
+    
+    def run(self):
+        self.start()

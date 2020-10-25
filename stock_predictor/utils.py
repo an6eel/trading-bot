@@ -14,26 +14,15 @@ def get_historic_data(symbol: Symbol):
     return parse_data_response(data.json())
 
 
-def get_date_format():
-    if TRAIN_TYPE == TrainingType.DAILY:
-        return "%Y-%m-%d"
-    else:
-        return "%Y-%m-%d %H:%M"
-
-
 def parse_data_response(data_response):
     try:
-        response = {}
         data = data_response['Data']
-        response['TimeFrom'] = datetime.fromtimestamp(data['TimeFrom']).astimezone(timezone('Europe/Madrid'))
-        response['TimeTo'] = datetime.fromtimestamp(data['TimeTo']).astimezone(timezone('Europe/Madrid'))
-        response['data'] = {}
+        response = {}
         stock_data = data['Data']
         for day in stock_data:
             close_value = day['close']
-            date = datetime.fromtimestamp(day['time']).astimezone(timezone('Europe/Madrid')).strftime(get_date_format())
-            response['data'][date] = close_value
-        parse_data_response(response)
+            date = datetime.fromtimestamp(day['time']).astimezone(timezone('Europe/Madrid')).isoformat()
+            response[date] = close_value
         return response
     except KeyError:
         return {}

@@ -12,3 +12,4 @@ class Symbol(str, Enum):
     TETHER = 'USDT'
     TRON = "TRX"
     BINANCE_COIN = 'BNB'
+
