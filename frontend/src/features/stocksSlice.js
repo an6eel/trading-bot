@@ -50,6 +50,9 @@ export const addStockAsync = () => dispatch => {
   }, 1000)
 }
 
+const { type, endpoint } = Stocks.index()
+console.log(type, endpoint)
+
 export const getStocks = () => {
   const { type, endpoint } = Stocks.index()
   return createAction({

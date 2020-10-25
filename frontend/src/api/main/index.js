@@ -11,19 +11,19 @@ const fillEndpoint = (endpoint, params) => _.template(endpoint)(params)
 const stocksRoutes = {
   index: {
     type: 'STOCKS',
-    path: '/stocks',
+    path: '/api/stocks',
   },
   single: {
     type: 'SINGLE_STOCK',
-    path: '/stocks/${ symbol }'
+    path: '/api/stocks/${ symbol }'
   },
   train: {
     type: 'TRAIN_STOCK',
-    path: '/stocks/${ symbol }/train'
+    path: '/api/stocks/${ symbol }/train'
   },
   singlePredictions: {
     type: 'SINGLE_PREDICTIONS_STOCK',
-    path: '/stocks/${ symbol }/predictions'
+    path: '/api/stocks/${ symbol }/predictions'
   }
 }
 const stocksEndpoints = _.mapValues(stocksRoutes, addEndpoint)
@@ -56,7 +56,7 @@ export const Stocks = {
 const botRoutes = {
   singleStockAction: {
     type: 'SINGLE_STOCK_ACTION',
-    path: '/bot/${ symbol }/actions'
+    path: '/api/bot/${ symbol }/actions'
   },
 }
 const botEndpoints = _.mapValues(botRoutes, addEndpoint)

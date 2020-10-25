@@ -26,6 +26,7 @@
   "devDependencies": {
     "env-cmd": "^10.1.0",
     "eslint-plugin-babel": "^5.3.1",
+    "http-proxy-middleware": "^1.0.6",
     "husky": "^4.3.0",
     "lint-staged": "^10.4.2"
   },
