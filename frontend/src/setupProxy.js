@@ -12,15 +12,9 @@ module.exports = function(app) {
     createProxyMiddleware('/api/**', {
       target: target,
       changeOrigin: true,
-      /*onProxyReq: (proxyReq, req, res) => {
-        const referer = req.headers.referer
-        if (_.isString(referer)) {
-          const ref = referer.replace(/^https:\/\/(.*)\//, target + '/')
-          proxyReq.setHeader('Referer', ref)
-        }
-
-        //res.header("Access-Control-Allow-Origin", "https://localhost:3000");
-      }*/
+      onProxyRes: function (proxyRes, req, res) {
+        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+      }
     })
   )
 }
