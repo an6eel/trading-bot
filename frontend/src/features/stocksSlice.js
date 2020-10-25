@@ -1,21 +1,23 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import _ from 'lodash'
-import { createAction } from 'redux-api-middleware'
+import axios from 'axios'
 import { Stocks } from '../api/main'
-import { createActionTypesOfMainAPI } from '../helpers/reducerHelpers'
+
+const { type, endpoint } = Stocks.index()
+export const getStocks = createAsyncThunk(
+  type,
+  async (userId, thunkAPI) => {
+    console.log('sssss')
+    const response = await axios.get(endpoint)
+    return response
+  }
+)
 
 export const stocksSlice = createSlice({
   name: 'stocks',
   initialState: {
-    byId: {
-      1: {
-        id: 1,
-        symbol: 'APPL',
-        name: 'Apple',
-        money: '$'
-      }
-    },
-    valuesById: {
+    bySymbol: {},
+    valuesBySymbol: {
       1: {
         '2000-01-03T00:00:00': 0.99,
         '2000-01-04T00:00:00': 0.91,
@@ -27,43 +29,30 @@ export const stocksSlice = createSlice({
         '2020-10-23T00:00:00': 115.04
       }
     },
-    predictionsById: {}
-
+    predictionsBySymbol: {}
   },
   reducers: {
     addStocks: (state, action) => {
       const stocks = action.payload
-      stocks.forEach(s => state.byId[s.id] = s)
+      stocks.forEach(s => state.bySymbol[s.id] = s)
     },
   },
+  extraReducers: {
+    [getStocks.fulfilled]: (state, action) => {
+      const { data } = action.payload
+      const bySymbol = _.reduce(data, function(result, symbol, name) {
+        result[symbol] = { name }
+        return result
+      }, {})
+      _.forEach(bySymbol, (stock, symbol) => state.bySymbol[symbol] = stock )
+      return state
+    }
+  }
 })
 
 export const { addStocks } = stocksSlice.actions
 
-export const addStockAsync = () => dispatch => {
-  setTimeout(() => {
-    dispatch(addStocks([{
-      id: 3,
-      name: 'Stock 3',
-      money: '$'
-    }]))
-  }, 1000)
-}
-
-const { type, endpoint } = Stocks.index()
-console.log(type, endpoint)
-
-export const getStocks = () => {
-  const { type, endpoint } = Stocks.index()
-  return createAction({
-    endpoint,
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    types: createActionTypesOfMainAPI(type)
-  })
-}
-
-export const selectStocks = (state) => _.values(state.stocks.byId)
-export const selectStockById = (state, id) => state.stocks.byId[id]
+export const selectStocks = (state) => _.values(state.stocks.bySymbol)
+export const selectStockById = (state, symbol) => state.stocks.bySymbol[symbol]
 
 export default stocksSlice.reducer

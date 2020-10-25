@@ -10,19 +10,19 @@ const fillEndpoint = (endpoint, params) => _.template(endpoint)(params)
 
 const stocksRoutes = {
   index: {
-    type: 'STOCKS',
+    type: 'stocks/index',
     path: '/api/stocks',
   },
   single: {
-    type: 'SINGLE_STOCK',
+    type: 'stocks/single',
     path: '/api/stocks/${ symbol }'
   },
-  train: {
-    type: 'TRAIN_STOCK',
+  singleTrain: {
+    type: 'stocks/single_train',
     path: '/api/stocks/${ symbol }/train'
   },
   singlePredictions: {
-    type: 'SINGLE_PREDICTIONS_STOCK',
+    type: 'stocks/single_predictions',
     path: '/api/stocks/${ symbol }/predictions'
   }
 }
@@ -55,7 +55,7 @@ export const Stocks = {
 
 const botRoutes = {
   singleStockAction: {
-    type: 'SINGLE_STOCK_ACTION',
+    type: 'bot/single_stock_actions',
     path: '/api/bot/${ symbol }/actions'
   },
 }

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import _ from 'lodash'
 import {
-  addStocks,
   selectStocks,
   getStocks,
 } from '../../../features/stocksSlice'
@@ -16,20 +15,10 @@ export const StocksView = () => {
     dispatch(getStocks())
   }, [])
 
-  const onAdd = () => {
-    const stock = {
-      id: 2,
-      name: 'Stock 2',
-      money: '$'
-    }
-    dispatch(addStocks([stock]))
-  }
+  const content = _.map(stocks, s => s.name)
 
   return (
-    <MainLayout>
-      StocksView
-      {_.map(stocks, s => s.name)}
-      <button onClick={onAdd}>Add</button>
+    <MainLayout content={content}>
     </MainLayout>
   )
 }
