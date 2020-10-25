@@ -1,5 +1,5 @@
 import { configureStore, combineReducers, getDefaultMiddleware } from '@reduxjs/toolkit'
-import { createMiddleware as createApiMiddeleware } from 'redux-api-middleware';
+import { createMiddleware as createApiMiddeleware } from 'redux-api-middleware'
 import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import stocksReducer from './features/stocksSlice'
