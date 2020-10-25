@@ -55,3 +55,9 @@ async def get_symbol_predictions(
     data = get_stocks_data(symbol)
     predictions = get_predictions_prophet(data, forward_days)
     return predictions
+
+
+@app.get('/symbols')
+def get_symbols_list():
+    symbols = get_symbols
+    return symbols
