@@ -46,13 +46,9 @@ def build_model(look_back: int, forward_days: int) -> Model:
     return model
 
 
-def train_model(symbol: str,
-                look_back: int,
-                forward_days: int,
-                output_path: Path
-                ):
-
-    if output_path.joinpath('{}-{}-{}-lstm-model.h5'.format(symbol, look_back, forward_days)).is_file():
+def train_model(symbol: str, look_back: int, forward_days: int):
+    model_path = Path("models", "{}-LB-{}-FD-{}-model.h5".format(symbol, look_back, forward_days))
+    if model_path.exists():
         return {'trained': True}
     else:
         data = get_stocks_data(symbol)
@@ -67,7 +63,7 @@ def train_model(symbol: str,
 
         model = build_model(look_back, forward_days)
 
-        check_pointer = ModelCheckpoint(filepath=output_path.joinpath('{}-4-lstm-model.h5'.format(symbol)),
+        check_pointer = ModelCheckpoint(filepath=str(model_path),
                                         verbose=1,
                                         monitor='val_loss',
                                         mode='min',
@@ -90,7 +86,8 @@ def train_model(symbol: str,
 
 
 def get_predictions(symbol: str, look_back: int, forward_days: int):
-    model: Model = load_model('models/{}-4-lstm-model.h5'.format(symbol))
+    model_path = Path("models", "{}-LB-{}-FD-{}-model.h5".format(symbol, look_back, forward_days))
+    model: Model = load_model(model_path)
 
     data: pd.Series = get_stocks_data(symbol)
 
