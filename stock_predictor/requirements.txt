@@ -1,3 +1,5 @@
+celery
+redis
 motor
 absl-py==0.10.0
 astunparse==1.6.3

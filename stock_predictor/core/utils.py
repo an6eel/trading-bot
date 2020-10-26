@@ -1,12 +1,13 @@
 import requests
-from config import API_BASE_URL, TRAIN_TYPE, API_KEY
-from models.symbols import Symbol
-from models.training import TrainingType
+from core.config import API_BASE_URL, TRAIN_TYPE, API_KEY
+from models.symbol import SymbolItem
+from models.stock_model import TrainingType
 from datetime import datetime
 from pytz import timezone
 
 
-def get_historic_data(symbol: Symbol):
+def get_historic_data(symbol: SymbolItem):
+
     limit = 80 * 24 if TRAIN_TYPE == TrainingType.HOURLY else 24 * 60
     all_data = "&allData=true" if TRAIN_TYPE == TrainingType.DAILY else "&limit={}".format(limit)
     url = "{}{}?fsym={}&tsym=EUR{}&api_key={}".format(API_BASE_URL, TRAIN_TYPE, symbol, all_data, API_KEY)
@@ -24,5 +25,6 @@ def parse_data_response(data_response):
             date = datetime.fromtimestamp(day['time']).astimezone(timezone('Europe/Madrid')).isoformat()
             response[date] = close_value
         return response
-    except KeyError:
+    except Exception as e:
+
         return {}

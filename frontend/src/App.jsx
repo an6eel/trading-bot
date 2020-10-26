@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 
 const App = () => {
-  const evtSource = new EventSource("http://localhost/BTC/train");
-  evtSource.addEventListener("progress", function(event) {
+  const evtSource = new EventSource("http://localhost/histoday/ml/BTC/train");
+  evtSource.addEventListener("status", function(event) {
       // Logic to handle status updates
       console.log(event)
   });

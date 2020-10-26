@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple
-from keras.models import Sequential, load_model, Model
+from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 from pathlib import Path
 from datetime import timedelta
@@ -10,26 +9,22 @@ from keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-import os
-from config import TRAIN_TYPE
-from models.training import TrainingType
-from typing import Dict
+from prediction.helpers import (
+    predictions_offset,
+    get_forward_day_time,
+    get_look_back_time,
+    get_parsed_data,
+    process_data
+)
 from datetime import datetime
-from typing import Callable
-from models.StockModel import StockModelOnDB, update_model_status, TrainingStatus, update_predictions
-from db.db import AsyncIOMotorClient
-import threading
-import logging
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
-
-def process_data(data: np.ndarray, look_back: int, forward_days: int, jump: int = 1) -> Tuple[np.ndarray, np.ndarray]:
-    X, Y = [], []
-    for i in range(0, len(data) - look_back - forward_days + 1, jump):
-        X.append(data[i:(i + look_back)])
-        Y.append(data[(i + look_back):(i + look_back + forward_days)])
-    return np.array(X), np.array(Y)
+from models.stock_model import TrainingStatus
+from models.symbol import SymbolItem
+from controllers.stock_models import get_model, update_model_status, complete_training
+from worker.worker import celery_app
+from celery import current_task
+from db.db import get_database, DataBase
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
 
 def build_model(look_back: int, forward_days: int) -> Model:
@@ -53,40 +48,20 @@ def build_model(look_back: int, forward_days: int) -> Model:
     return model
 
 
-def get_look_back_time():
-    if TRAIN_TYPE == TrainingType.DAILY:
-        return 120
-    elif TRAIN_TYPE == TrainingType.HOURLY:
-        return 96
-    else:
-        return 480
-
-
-def get_forward_day_time():
-    if TRAIN_TYPE == TrainingType.DAILY:
-        return 30
-    elif TRAIN_TYPE == TrainingType.HOURLY:
-        return 12
-    else:
-        return 60
-
-
-def get_parsed_data(data: Dict[str, float]):
-    dates = data.keys()
-    closes = data.values()
-    df = pd.DataFrame(closes, index=dates, columns=['Close'])
-    return df
-
-
-async def train_model(stock_model: StockModelOnDB, db_client: AsyncIOMotorClient):
-    logging.info("LSTM")
-    await update_model_status(db_client, str(stock_model.id), TrainingStatus.TRAINING)
+@celery_app.task
+async def train_model(symbol: SymbolItem):
+    db: DataBase = get_database()
+    db_client = db.stocks_collection
+    stock_model = await get_model(db_client, symbol)
+    logger.debug(stock_model)
+    current_task.update_state(state="PROGRESS", meta={'progress_percent': 33})
     model_path = Path(stock_model.path)
     try:
         look_back = get_look_back_time()
         forward_days = get_forward_day_time()
         df = get_parsed_data(stock_model.data)
         array = df.values.reshape(df.shape[0], 1)
+
         scl = MinMaxScaler()
         array = scl.fit_transform(array)
 
@@ -105,7 +80,9 @@ async def train_model(stock_model: StockModelOnDB, db_client: AsyncIOMotorClient
         early_stopping = EarlyStopping(monitor='val_loss',
                                        patience=5,
                                        restore_best_weights=True)
-
+        await update_model_status(db_client, symbol, TrainingStatus.TRAINING)
+        logger.debug("training")
+        current_task.update_state(state="PROGRESS", meta={'progress_percent': 53})
         model.fit(x_train,
                   y_train,
                   epochs=100,
@@ -115,21 +92,13 @@ async def train_model(stock_model: StockModelOnDB, db_client: AsyncIOMotorClient
                   verbose=2,
                   callbacks=(check_pointer, early_stopping)
                   )
-        await update_model_status(db_client, str(stock_model.id), TrainingStatus.TRAINED)
         predictions = get_predictions(df, model)
-        await update_predictions(db_client, str(stock_model.id), predictions)
+
+        await complete_training(db_client, symbol, predictions)
         return True
-    except :
+    except Exception as e:
+        await update_model_status(db_client, symbol, TrainingStatus.NOT_TRAINED)
         return False
-
-
-def predictions_offset():
-    if TRAIN_TYPE == TrainingType.DAILY:
-        return {'days': 1}
-    elif TRAIN_TYPE == TrainingType.HOURLY:
-        return {'hours': 1}
-    else:
-        return {'minutes': 1}
 
 
 def get_predictions(df: pd.DataFrame, model: Model):
@@ -147,16 +116,7 @@ def get_predictions(df: pd.DataFrame, model: Model):
     date: datetime = pd.to_datetime(df.index[-1]) + timedelta(**predictions_offset())
 
     for forecast in predictions:
-        response[date.isoformat()] = float(forecast)
+        response[date] = float(forecast)
         date += timedelta(**predictions_offset())
 
     return response
-
-
-class AsyncTrainer(threading.Thread):
-    
-    def __init__(self, fn, args):
-        threading.Thread.__init__(self, target=fn, args=args)
-    
-    def run(self):
-        self.start()

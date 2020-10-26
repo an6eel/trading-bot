@@ -1,6 +1,7 @@
 import os
-from models.training import TrainingType
+from models.stock_model import TrainingType
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 TRAIN_TYPE = os.getenv('TRAIN_TYPE', TrainingType.DAILY)
 API_KEY = os.getenv('API_KEY')
 API_BASE_URL = "https://min-api.cryptocompare.com/data/v2/"

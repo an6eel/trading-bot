@@ -1,10 +1,44 @@
 version: "3.8"
 services:
-#  backend:
-#    build: ./backend
-#    container_name: fastapi
-#    ports:
-#      - "80:80"
+  rabbitmq:
+    image: bitnami/rabbitmq:3.7
+    ports:
+      - "4369:4369"
+      - "5672:5672"
+      - "25672:25672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/bitnami
+    depends_on:
+      - db
+  redis:
+    image: "bitnami/redis:5.0.4"
+    environment:
+      - REDIS_PASSWORD=password123
+    ports:
+      - "6379:6379"
+    volumes:
+      - "redis_data:/bitnami/redis/data"
+    depends_on:
+      - db
+  celery-flower:
+    image: gregsi/latest-celery-flower-docker:latest
+    environment:
+      - AMQP_USERNAME=user
+      - AMQP_PASSWORD=bitnami
+      - AMQP_ADMIN_USERNAME=user
+      - AMQP_ADMIN_PASSWORD=bitnami
+      - AMQP_HOST=rabbitmq
+      - AMQP_PORT=5672
+      - AMQP_ADMIN_HOST=rabbitmq
+      - AMQP_ADMIN_PORT=15672
+      - FLOWER_BASIC_AUTH=user:test
+    ports:
+      - "5555:5555"
+    depends_on:
+      - rabbitmq
+      - redis
+      - db
   daily_predictor:
     build: ./stock_predictor
     container_name: daily_predictor
@@ -19,6 +53,17 @@ services:
       - "80:80"
     depends_on:
       - db
+      - rabbitmq
+      - redis
+  worker:
+    build: ./stock_predictor
+    depends_on:
+      - rabbitmq
+      - redis
+      - db
+    volumes:
+      - ./stock_predictor/:/app
+    command: "celery -A worker.worker worker -l info -Q test-queue -c 1"
   db:
     image: mongo
     container_name: mongodb
@@ -32,3 +77,5 @@ services:
 
 volumes:
   db_data: {}
+  rabbitmq_data: {}
+  redis_data: {}

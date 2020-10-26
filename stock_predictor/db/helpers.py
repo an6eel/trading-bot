@@ -1,8 +1,8 @@
 import motor.motor_asyncio
 
-from config import MONGO_PORT, MONGO_URL
+from core.config import MONGO_PORT, MONGO_URL
 from db.db import db
-from models.Symbol import generate_all_symbols
+from crud.symbol import generate_all_symbols
 
 
 async def connect_to_mongo():
@@ -15,8 +15,9 @@ async def connect_to_mongo():
 
     if "models" not in collections:
         await stocks_db.create_collection("models")
-
-    await generate_all_symbols(db.client)
+    db.symbols_collection = db.client["stocks"]["symbols"]
+    db.stocks_collection = db.client["stocks"]["models"]
+    await generate_all_symbols(db)
 
 
 async def close_mongo():
