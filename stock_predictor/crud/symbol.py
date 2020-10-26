@@ -1,5 +1,5 @@
 from db.db import DataBase, AsyncIOMotorCollection
-from models.symbol import SymbolCreate, SymbolDB, SymbolItem, Symbol
+from models.symbol_model import SymbolCreate, SymbolDB, SymbolItem, Symbol
 from models.stock_model import StockModelCreate
 from crud.stock_model import create_model
 from bson import ObjectId

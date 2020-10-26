@@ -1,5 +1,5 @@
 from models.stock_model import StockModelUpdate, StockModelDB, StockModelCreate, TrainingStatus
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 from db.db import AsyncIOMotorCollection
 from bson import ObjectId
 from core.config import TRAIN_TYPE

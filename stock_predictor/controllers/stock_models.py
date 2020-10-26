@@ -1,6 +1,6 @@
 from crud.stock_model import get_model, update_model
 from db.db import AsyncIOMotorCollection
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 from models.stock_model import StockModelUpdate, TrainingStatus
 from core.utils import get_historic_data
 from datetime import datetime

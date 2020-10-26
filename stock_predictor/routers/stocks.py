@@ -2,7 +2,7 @@ from fastapi import APIRouter, Path, Depends
 from db.db import get_database, DataBase
 from controllers.stock_models import get_model_data
 from crud.symbol import get_symbols
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 
 router = APIRouter()
 

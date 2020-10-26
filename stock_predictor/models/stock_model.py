@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from models.rw_model import RWModel
 from models.db_model import DBModelMixin, DateTimeModelMixin
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 import os
 
 

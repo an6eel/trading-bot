@@ -18,7 +18,7 @@ from prediction.helpers import (
 )
 from datetime import datetime
 from models.stock_model import TrainingStatus
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 from controllers.stock_models import get_model, update_model_status, complete_training
 from worker.worker import celery_app
 from celery import current_task

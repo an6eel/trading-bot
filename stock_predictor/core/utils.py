@@ -1,6 +1,6 @@
 import requests
 from core.config import API_BASE_URL, TRAIN_TYPE, API_KEY
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 from models.stock_model import TrainingType
 from datetime import datetime
 from pytz import timezone

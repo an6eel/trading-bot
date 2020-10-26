@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Path, Depends, BackgroundTasks
 import asyncio
-from models.symbol import SymbolItem
+from models.symbol_model import SymbolItem
 from models.stock_model import TrainingStatus
 from db.db import DataBase, get_database
 from sse_starlette.sse import EventSourceResponse
