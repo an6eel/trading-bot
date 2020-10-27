@@ -63,7 +63,7 @@ services:
       - db
     volumes:
       - ./stock_predictor/:/app
-    command: "celery -A worker.worker worker -l info -Q test-queue -c 1"
+    command: "celery -A worker.worker worker -l info -c 1"
   db:
     image: mongo
     container_name: mongodb

@@ -7,7 +7,7 @@ const App = () => {
       console.log(event)
   });
   evtSource.addEventListener("end", function(event) {
-      console.log('Handling end....')
+      console.log(event)
       evtSource.close();
   });
   return (

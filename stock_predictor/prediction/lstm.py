@@ -17,13 +17,12 @@ from prediction.helpers import (
     process_data
 )
 from datetime import datetime
-from models.stock_model import TrainingStatus
-from models.symbol_model import SymbolItem
-from controllers.stock_models import get_model, update_model_status, complete_training
-from worker.worker import celery_app
+from models.stock_model import StockModelDB
 from celery import current_task
-from db.db import get_database, DataBase
 from celery.utils.log import get_task_logger
+from typing import Dict
+from prediction.progress_callback import ProgressCallback
+
 logger = get_task_logger(__name__)
 
 
@@ -48,13 +47,9 @@ def build_model(look_back: int, forward_days: int) -> Model:
     return model
 
 
-@celery_app.task
-async def train_model(symbol: SymbolItem):
-    db: DataBase = get_database()
-    db_client = db.stocks_collection
-    stock_model = await get_model(db_client, symbol)
-    logger.debug(stock_model)
-    current_task.update_state(state="PROGRESS", meta={'progress_percent': 33})
+async def train_model(model: Dict):
+    stock_model = StockModelDB(**model)
+    def update_state_callback(epoch): current_task.update_state(state="TRAINING", meta={"progress": epoch})
     model_path = Path(stock_model.path)
     try:
         look_back = get_look_back_time()
@@ -80,9 +75,8 @@ async def train_model(symbol: SymbolItem):
         early_stopping = EarlyStopping(monitor='val_loss',
                                        patience=5,
                                        restore_best_weights=True)
-        await update_model_status(db_client, symbol, TrainingStatus.TRAINING)
-        logger.debug("training")
-        current_task.update_state(state="PROGRESS", meta={'progress_percent': 53})
+        progress_callback = ProgressCallback(callback=update_state_callback)
+        current_task.update_state(state="START_TRAINING")
         model.fit(x_train,
                   y_train,
                   epochs=100,
@@ -90,14 +84,13 @@ async def train_model(symbol: SymbolItem):
                   shuffle=True,
                   batch_size=128,
                   verbose=2,
-                  callbacks=(check_pointer, early_stopping)
+                  callbacks=(check_pointer, early_stopping, progress_callback)
                   )
-        predictions = get_predictions(df, model)
-
-        await complete_training(db_client, symbol, predictions)
+        current_task.update_state(state="TRAINING", meta={"progress": 100})
         return True
     except Exception as e:
-        await update_model_status(db_client, symbol, TrainingStatus.NOT_TRAINED)
+        current_task.update_state("TRAINING_FAILED")
+        logger.info(e)
         return False
 
 
