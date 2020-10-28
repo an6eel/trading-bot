@@ -24,29 +24,37 @@ async def sse_train_model(
     while True:
         if await request.is_disconnected():
             break
+        elif status == TrainingStatus.TRAINED:
+            yield {
+                "event": "end",
+                "data": "trained"
+            }
+            break
 
-        task_status = task.state
+        task_state = task.state
+        task_status = task.status
+        state = await get_model_status(db_client.stocks_collection, symbol)
 
-        if task_status == "START_TRAINING":
+        if task_state == "START_TRAINING" or (state == TrainingStatus.NOT_TRAINED and task_status == 'PENDING'):
             await update_model_status(db_client.stocks_collection, symbol, TrainingStatus.TRAINING)
             yield {
                 "event": "status",
-                "data": "Train starting"
+                "data": "Train starting: {}".format(state)
             }
-        elif task_status == "TRAINING_FAILED":
+        elif task_state == "TRAINING_FAILED" or task_status == 'FAILURE':
             await update_model_status(db_client.stocks_collection, symbol, TrainingStatus.NOT_TRAINED)
             yield {
                 "event": "end",
                 "data": "failed"
             }
             break
-        elif task_status == "TRAINING":
+        elif task_state == "TRAINING":
             progress = task.info.get("progress")
             if progress == 100:
                 await update_model_status(db_client.stocks_collection, symbol, TrainingStatus.TRAINED)
                 yield {
                     "event": "end",
-                    "data": "completed"
+                    "data": "trained"
                 }
                 break
             else:
@@ -54,6 +62,13 @@ async def sse_train_model(
                     "event": "status",
                     "data": str(progress)
                 }
+        elif task_status == "SUCCESS":
+            await update_model_status(db_client.stocks_collection, symbol, TrainingStatus.TRAINED)
+            yield {
+                "event": "end",
+                "data": "trained"
+            }
+            break
 
         await asyncio.sleep(5)
 
