@@ -6,7 +6,6 @@ from db.db import DataBase, get_database
 from sse_starlette.sse import EventSourceResponse
 from controllers.stock_models import get_model_status, get_model_predictions, get_model, update_model_status
 
-import logging
 from worker.tasks import celery_train_model
 router = APIRouter()
 
@@ -18,7 +17,6 @@ async def sse_train_model(
 ):
     status = await get_model_status(db_client.stocks_collection, symbol)
     model = await get_model(db_client.stocks_collection, symbol)
-    logging.info(status)
     if status == TrainingStatus.NOT_TRAINED:
         task = celery_train_model.delay(model.dict())
     while True:
