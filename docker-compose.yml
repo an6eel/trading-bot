@@ -1,5 +1,6 @@
 version: "3.8"
 services:
+# celery services
   rabbitmq:
     image: bitnami/rabbitmq:3.7
     ports:
@@ -11,6 +12,8 @@ services:
       - rabbitmq_data:/bitnami
     depends_on:
       - db
+    labels:
+      - "traefik.enable=false"
   redis:
     image: "bitnami/redis:5.0.4"
     environment:
@@ -21,6 +24,8 @@ services:
       - "redis_data:/bitnami/redis/data"
     depends_on:
       - db
+    labels:
+      - "traefik.enable=false"
   celery-flower:
     image: gregsi/latest-celery-flower-docker:latest
     environment:
@@ -35,10 +40,40 @@ services:
       - FLOWER_BASIC_AUTH=user:test
     ports:
       - "5555:5555"
+    labels:
+      - "traefik.enable=false"
     depends_on:
       - rabbitmq
       - redis
       - db
+  worker:
+    build: ./stock_predictor
+    depends_on:
+      - rabbitmq
+      - redis
+      - db
+    volumes:
+      - ./stock_predictor/:/app
+    labels:
+      - "traefik.enable=false"
+    command: "celery -A worker.worker worker -l info -c 1"
+
+# db service
+  db:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: "stocks"
+    labels:
+      - "traefik.enable=false"
+    ports:
+      - 27017:27017
+    volumes:
+      - db_data:/data/db
+
+
+# predictor services
   daily_predictor:
     build: ./stock_predictor
     container_name: daily_predictor
@@ -50,31 +85,67 @@ services:
       MONGO_URL: db
       MONGO_PORT: 27017
     ports:
-      - "80:80"
+      - "43455:80"
     depends_on:
       - db
       - rabbitmq
       - redis
-  worker:
+    labels:
+      - "traefik.http.routers.daily.rule=PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.daily.middlewares=strip-path"
+    command: "uvicorn main:app --host 0.0.0.0 --port 80 --root-path /api/v1"
+  hour_predictor:
     build: ./stock_predictor
-    depends_on:
-      - rabbitmq
-      - redis
-      - db
+    container_name: hour_predictor
     volumes:
       - ./stock_predictor/:/app
-    command: "celery -A worker.worker worker -l info -c 1"
-  db:
-    image: mongo
-    container_name: mongodb
-    restart: always
     environment:
-      MONGO_INITDB_DATABASE: "stocks"
+      API_KEY: "96a77462a7a68eebbc94ffbd0e7324e48c197257465a4f5a9d5ca40dc4fb0112"
+      TRAIN_TYPE: "histohour"
+      MONGO_URL: db
+      MONGO_PORT: 27017
+    labels:
+      - "traefik.http.routers.hour.rule=PathPrefix(`/api/v1`) && Query(`type=hour`)"
+      - "traefik.http.routers.hour.middlewares=strip-path"
     ports:
-      - 27017:27017
+      - "43456:80"
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    command: "uvicorn main:app --host 0.0.0.0 --port 80 --root-path /api/v1"
+  minute_predictor:
+    build: ./stock_predictor
+    container_name: minute_predictor
     volumes:
-    - db_data:/data/db
+      - ./stock_predictor/:/app
+    environment:
+      API_KEY: "96a77462a7a68eebbc94ffbd0e7324e48c197257465a4f5a9d5ca40dc4fb0112"
+      TRAIN_TYPE: "histominute"
+      MONGO_URL: db
+      MONGO_PORT: 27017
+    labels:
+      - "traefik.http.routers.minute.rule=PathPrefix(`/api/v1`) && Query(`type=minute`)"
+      - "traefik.http.routers.minute.middlewares=strip-path"
+    ports:
+      - "43457:80"
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    command: "uvicorn main:app --host 0.0.0.0 --port 80 --root-path /api/v1"
 
+# traefik reverse-proxy
+  proxy:
+    image: traefik:v2.3
+    command: --providers.docker --api.insecure
+    ports:
+    - "80:80"
+    - "8080:8080"
+    labels:
+      - "traefik.http.middlewares.strip-path.stripprefix.prefixes=/api/v1"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
 volumes:
   db_data: {}
   rabbitmq_data: {}
