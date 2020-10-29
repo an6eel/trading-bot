@@ -6,11 +6,11 @@ from datetime import datetime
 from pytz import timezone
 
 
-def get_historic_data(symbol: SymbolItem):
+def get_historic_data(symbol: SymbolItem, type: TrainingType):
 
-    limit = 80 * 24 if TRAIN_TYPE == TrainingType.HOURLY else 24 * 60
-    all_data = "&allData=true" if TRAIN_TYPE == TrainingType.DAILY else "&limit={}".format(limit)
-    url = "{}{}?fsym={}&tsym=EUR{}&api_key={}".format(API_BASE_URL, TRAIN_TYPE, symbol, all_data, API_KEY)
+    limit = 80 * 24 if type == TrainingType.HOURLY else 24 * 60
+    all_data = "&allData=true" if type == TrainingType.DAILY else "&limit={}".format(limit)
+    url = "{}{}?fsym={}&tsym=EUR{}&api_key={}".format(API_BASE_URL, type, symbol, all_data, API_KEY)
     data = requests.get(url)
     return parse_data_response(data.json())
 
