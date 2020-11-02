@@ -11,12 +11,8 @@ export const App = () => {
                 <Route exact path="/">
                     <Redirect to="/stocks" />
                 </Route>
-                <Route path="/stocks">
-                    <StocksView/>
-                </Route>
-                <Route path="/stockdetails">
-                    <StockDetailsView/>
-                </Route>
+                <Route path="/stocks" component={StocksView}/>
+                <Route path="/stockdetails/:symbol" component={StockDetailsView}/>
             </Switch>
         </Router>
     )
