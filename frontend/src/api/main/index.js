@@ -60,7 +60,7 @@ export const Stocks = {
 const botRoutes = {
   singleStockAction: {
     type: 'bot/single_stock_actions',
-    path: '/api/bot/${ symbol }/actions'
+    path: '/api/agent/${ symbol }/actions'
   },
 }
 

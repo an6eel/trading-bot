@@ -11,9 +11,9 @@ export const MainLayout = memo((
     footer
   }) => {
   return (
-    <Layout>
+    <Layout style={{ height: "100vh" }}>
       {header && <Header>{header}</Header>}
-      <Layout>
+      <Layout style={{ backgroundColor: 'white'}}>
         {content && <Content>{content}</Content>}
       </Layout>
       {footer && <Footer>{footer}</Footer>}

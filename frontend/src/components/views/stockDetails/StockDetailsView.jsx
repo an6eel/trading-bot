@@ -3,13 +3,19 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   getSinglePredictions,
   getSingleStock,
-  getSingleTrain, selectStockPredictionsBySymbol,
-  selectStockValuesBySymbol, selectTrainedBySymbol,
+  getSingleTrain,
+  getSingleSuggestions,
+  selectStockPredictionsBySymbol,
+  selectStockValuesBySymbol,
+  selectTrainedBySymbol,
+  selectStockSuggestionsBySymbol
 } from '../../../features/stocksSlice'
 import { MainLayout } from '../../layouts/MainLayout'
 import styled from 'styled-components'
 import { Button } from 'antd'
 import { StockChart } from '../../charts/StockChart'
+import { SuggestionList } from '../../lists/suggestions/SuggestionList'
+import _ from "lodash"
 
 const ContentContainer = styled.div`
   height: 100%;
@@ -52,7 +58,9 @@ export const StockDetailsView = ({ match }) => {
 
   const trained = useSelector(state => selectTrainedBySymbol(state, symbol))
   const predictions = useSelector(state => selectStockPredictionsBySymbol(state, symbol))
+  const suggestions = useSelector(state => selectStockSuggestionsBySymbol(state, symbol))
   const [loadingPredictions, setLoadingPredictions] = useState(false)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
 
   useEffect(() => {
     if (!symbol) {
@@ -73,6 +81,12 @@ export const StockDetailsView = ({ match }) => {
     setLoadingPredictions(false)
   }, [])
 
+  const onSuggentions = async () => {
+    setLoadingSuggestions(true);
+    await dispatch(getSingleSuggestions(symbol))
+    setLoadingSuggestions(false)
+  }
+
   if (!values) {
     return 'Loading...'
   }
@@ -82,9 +96,10 @@ export const StockDetailsView = ({ match }) => {
       <ChartContainer>
         <StockChart symbol={symbol} values={values} predictions={trained ? predictions : null}/>
       </ChartContainer>
+
       <Footer>
-        <TrainButton onClick={onTrain} disabled={training}>
-          Train
+        <TrainButton onClick={onTrain} disabled={training || trained}>
+          {trained ? 'Trained': 'Train'}
         </TrainButton>
         {trained && !loadingPredictions &&
         <PredictionsButton onClick={onPredictions}>
@@ -92,7 +107,19 @@ export const StockDetailsView = ({ match }) => {
         </PredictionsButton>
         }
         {loadingPredictions && 'Loading predictions...'}
+        {trained && !loadingSuggestions &&
+        <PredictionsButton onClick={onSuggentions}>
+          Get Suggestions
+        </PredictionsButton>
+        }
+        {loadingSuggestions && 'Loading suggestions...'}
       </Footer>
+      {!_.isEmpty(suggestions) &&
+      <ChartContainer style={{ marginTop: 20 }}>
+        <h1>Actions</h1>
+        <SuggestionList suggestions={_.takeRight(suggestions, 10)}/>
+      </ChartContainer>
+      }
     </ContentContainer>
   )
   return (

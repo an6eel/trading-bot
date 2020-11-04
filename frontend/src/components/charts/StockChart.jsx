@@ -5,10 +5,6 @@ import React, { useMemo } from 'react'
 const mapStockValues = values => {
   const byDate = _.mapKeys(values, (v, key) => new Date(key))
   return _.map(byDate, (v, key) => ({ t: key, y: v }))
-
-  //const dates = _.keys(byDate)
-  //const minDate = _.min(dates)
-  //const maxDate = _.max(dates)
 }
 
 export const StockChart = ({ symbol, values, predictions }) => {
@@ -40,7 +36,7 @@ export const StockChart = ({ symbol, values, predictions }) => {
     if (predictions) {
       datasets.push({
         label: `${symbol} Predictions`,
-        data: mapStockValues(values),
+        data: mapStockValues(predictions),
         borderColor: 'red'
       })
     }

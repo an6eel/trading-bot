@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import _ from 'lodash'
 import axios from 'axios'
-import { Stocks } from '../api/main'
+import { Stocks, Bot } from '../api/main'
 import { mainAPIBase } from '../environment'
 
 const instance = axios.create({
@@ -38,13 +38,22 @@ export const getSinglePredictions = createAsyncThunk(
   }
 )
 
+export const getSingleSuggestions = createAsyncThunk(
+  Bot.singleStockAction.type,
+  async (symbol, thunkAPI) => {
+    const { path, params } = Bot.singleStockAction.create(symbol)//Stocks.singlePredictions.create(symbol)
+    return await instance.get(path, { params })
+  }
+)
+
 export const stocksSlice = createSlice({
   name: 'stocks',
   initialState: {
     bySymbol: {},
     valuesBySymbol: {},
     predictionsBySymbol: {},
-    trainedBySymbol: {}
+    trainedBySymbol: {},
+    suggestionsBySymbol: {}
   },
   reducers: {},
   extraReducers: {
@@ -86,21 +95,32 @@ export const stocksSlice = createSlice({
       const { arg: symbol } = action.meta
       const { data } = action.payload
       state.predictionsBySymbol[symbol] = data
+      console.log(state)
       return state
     },
     [getSinglePredictions.rejected]: (state, action) => {
       console.log(action)
       return state
-    }
+    },
+    [getSingleSuggestions.fulfilled]: (state, action) => {
+      const { arg: symbol } = action.meta
+      const { data } = action.payload
+      state.suggestionsBySymbol[symbol] = Object.entries(data).map(([date, action]) => ({ date, action}))
+      return state
+    },
+    [getSingleSuggestions.rejected]: (state, action) => {
+      console.log(action)
+      return state
+    },
   }
 })
 
-export const { addAction } = stocksSlice.actions
 
 export const selectStocks = (state) => _.values(state.stocks.bySymbol)
 export const selectStockBySymbol = (state, symbol) => state.stocks.bySymbol[symbol]
 export const selectStockValuesBySymbol = (state, symbol) => state.stocks.valuesBySymbol[symbol]
 export const selectStockPredictionsBySymbol = (state, symbol) => state.stocks.predictionsBySymbol[symbol]
+export const selectStockSuggestionsBySymbol = (state, symbol) => state.stocks.suggestionsBySymbol[symbol]
 export const selectTrainedBySymbol = (state, symbol) => state.stocks.trainedBySymbol[symbol]
 
 export default stocksSlice.reducer
