@@ -46,47 +46,48 @@ def build_model(look_back: int, forward_days: int) -> Model:
     return model
 
 
-def train_model(symbol: str,
-                look_back: int,
-                forward_days: int,
-                epochs: int,
-                output_path: Path
-                ):
-    data = get_stocks_data(symbol)
-    df = data['Close']
-    array = df.values.reshape(df.shape[0], 1)
-    scl = MinMaxScaler()
-    array = scl.fit_transform(array)
+def train_model(symbol: str, look_back: int, forward_days: int):
+    model_path = Path("models", "{}-LB-{}-FD-{}-model.h5".format(symbol, look_back, forward_days))
+    if model_path.exists():
+        return {'trained': True}
+    else:
+        data = get_stocks_data(symbol)
+        df = data['Close']
+        array = df.values.reshape(df.shape[0], 1)
+        scl = MinMaxScaler()
+        array = scl.fit_transform(array)
 
-    x, y = process_data(array, look_back, forward_days)
-    y = np.array([list(a.ravel()) for a in y])
-    x_train, x_validate, y_train, y_validate = train_test_split(x, y, test_size=0.20, random_state=42)
+        x, y = process_data(array, look_back, forward_days)
+        y = np.array([list(a.ravel()) for a in y])
+        x_train, x_validate, y_train, y_validate = train_test_split(x, y, test_size=0.20, random_state=42)
 
-    model = build_model(look_back, forward_days)
+        model = build_model(look_back, forward_days)
 
-    check_pointer = ModelCheckpoint(filepath=output_path.joinpath('{}-4-lstm-model.h5'.format(symbol)),
-                                    verbose=1,
-                                    monitor='val_loss',
-                                    mode='min',
-                                    save_best_only=True)
+        check_pointer = ModelCheckpoint(filepath=str(model_path),
+                                        verbose=1,
+                                        monitor='val_loss',
+                                        mode='min',
+                                        save_best_only=True)
 
-    early_stopping = EarlyStopping(monitor='val_loss',
-                                   patience=5,
-                                   restore_best_weights=True)
+        early_stopping = EarlyStopping(monitor='val_loss',
+                                       patience=5,
+                                       restore_best_weights=True)
 
-    model.fit(x_train,
-              y_train,
-              epochs=epochs,
-              validation_data=(x_validate, y_validate),
-              shuffle=True,
-              batch_size=128,
-              verbose=2,
-              callbacks=(check_pointer, early_stopping)
-              )
+        model.fit(x_train,
+                  y_train,
+                  epochs=100,
+                  validation_data=(x_validate, y_validate),
+                  shuffle=True,
+                  batch_size=128,
+                  verbose=2,
+                  callbacks=(check_pointer, early_stopping)
+                  )
+        return {'trained': True}
 
 
 def get_predictions(symbol: str, look_back: int, forward_days: int):
-    model: Model = load_model('models/{}-4-lstm-model.h5'.format(symbol))
+    model_path = Path("models", "{}-LB-{}-FD-{}-model.h5".format(symbol, look_back, forward_days))
+    model: Model = load_model(model_path)
 
     data: pd.Series = get_stocks_data(symbol)
 

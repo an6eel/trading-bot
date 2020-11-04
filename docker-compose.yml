@@ -3,5 +3,7 @@ services:
   backend:
     build: ./backend
     container_name: fastapi
+    volumes:
+    - ./backend:/app
     ports:
       - "80:80"
