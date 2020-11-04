@@ -22,7 +22,7 @@ const stocksRoutes = {
 }
 
 export const Stocks = {
-  index:  {
+  index: {
     ...stocksRoutes.index,
     create: () => ({
       path: stocksRoutes.index.path
@@ -36,10 +36,10 @@ export const Stocks = {
     })
   },
   // Response: { trained: boolean }
-  train: {
+  singleTrain: {
     ...stocksRoutes.singleTrain,
-    create: (symbol, { lookBack = 5, forwardDays = 5 }) => ({
-      path: fillTemplate(stocksRoutes.train.path, { symbol }),
+    create: (symbol, lookBack = 90, forwardDays = 10) => ({
+      path: fillTemplate(stocksRoutes.singleTrain.path, { symbol }),
       params: {
         look_back: lookBack, forward_days: forwardDays
       }
@@ -48,7 +48,7 @@ export const Stocks = {
   // Response Format: { "iso_date": close_value }
   singlePredictions: {
     ...stocksRoutes.singlePredictions,
-    create: (symbol, { lookBack = 5, forwardDays = 5 }) => ({
+    create: (symbol, lookBack = 90, forwardDays = 10) => ({
       path: fillTemplate(stocksRoutes.singlePredictions.path, { symbol }),
       params: {
         look_back: lookBack, forward_days: forwardDays
@@ -68,7 +68,7 @@ export const Bot = {
   // Response: { "iso_date": action (SELL | BUY) }
   singleStockAction: {
     ...botRoutes.singleStockAction,
-    create: (symbol, { lookBack = 5, forwardDays = 5 }) => ({
+    create: (symbol, lookBack = 90, forwardDays = 10) => ({
       path: fillTemplate(botRoutes.singleStockAction.path, { symbol }),
       params: {
         look_back: lookBack, forward_days: forwardDays

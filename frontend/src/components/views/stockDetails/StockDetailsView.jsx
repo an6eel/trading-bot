@@ -1,11 +1,17 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import _ from 'lodash'
-import { getSingleStock, selectStockValuesBySymbol } from '../../../features/stocksSlice'
+import {
+  getSinglePredictions,
+  getSingleStock,
+  getSingleTrain, selectStockPredictionsBySymbol,
+  selectStockValuesBySymbol,
+  selectTrained,
+  selectTraining
+} from '../../../features/stocksSlice'
 import { MainLayout } from '../../layouts/MainLayout'
-import { Line } from 'react-chartjs-2'
 import styled from 'styled-components'
 import { Button } from 'antd'
+import { StockChart } from '../../charts/StockChart'
 
 const ContentContainer = styled.div`
   height: 100%;
@@ -23,8 +29,13 @@ const Footer = styled.div`
 export const StockDetailsView = ({ match }) => {
   const dispatch = useDispatch()
   const { symbol } = match.params
-
   const values = useSelector(state => selectStockValuesBySymbol(state, symbol))
+  const training = useSelector(selectTraining)
+  const trained = useSelector(selectTrained)
+
+  const predictions = useSelector(state => selectStockPredictionsBySymbol(state, symbol))
+  const loadingPredictions = trained && !predictions
+
   useEffect(() => {
     if (!symbol) {
       return
@@ -32,41 +43,33 @@ export const StockDetailsView = ({ match }) => {
     dispatch(getSingleStock(symbol))
   }, [symbol])
 
+  const onTrain = useCallback(() => {
+    console.log('onTrain')
+    dispatch(getSingleTrain(symbol))
+  }, [symbol])
+
+  const onPredictions = useCallback(() => {
+    dispatch(getSinglePredictions(symbol))
+  }, [])
+
   if (!values) {
     return 'Loading...'
-  }
-
-  const byDate = _.mapKeys(values,(v, key) => new Date(key))
-  const stockData = _.map(byDate, (v, key) => ({ t: key, y: v }))
-  const dates = _.keys(byDate)
-  const minDate = _.min(dates)
-  const maxDate = _.max(dates)
-
-  const options = {
-    scales: {
-      xAxes: [{
-        type: 'time'
-      }]
-    }
-  }
-
-  const data = {
-    labels: [minDate, maxDate],
-    datasets: [{
-      label: symbol,
-      data: stockData
-    }]
   }
 
   const content = (
     <ContentContainer>
       <div>
-        <Line data={data} options={options}/>
+        <StockChart symbol={symbol} values={values} predictions={predictions}/>
       </div>
       <Footer>
-        <Button type="primary">
+        <Button type="primary" onClick={onTrain} disabled={training || trained || loadingPredictions}>
           Train
         </Button>
+        {trained &&
+        <Button type="primary" onClick={onPredictions}>
+          Get Predictions
+        </Button>
+        }
       </Footer>
     </ContentContainer>
   )
