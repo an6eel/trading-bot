@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   getSinglePredictions,
   getSingleStock,
   getSingleTrain, selectStockPredictionsBySymbol,
-  selectStockValuesBySymbol,
-  selectTrained,
-  selectTraining
+  selectStockValuesBySymbol, selectTrainedBySymbol,
 } from '../../../features/stocksSlice'
 import { MainLayout } from '../../layouts/MainLayout'
 import styled from 'styled-components'
@@ -30,11 +28,11 @@ export const StockDetailsView = ({ match }) => {
   const dispatch = useDispatch()
   const { symbol } = match.params
   const values = useSelector(state => selectStockValuesBySymbol(state, symbol))
-  const training = useSelector(selectTraining)
-  const trained = useSelector(selectTrained)
+  const [training, setTraining] = useState(false)
 
+  const trained = useSelector(state => selectTrainedBySymbol(state, symbol))
   const predictions = useSelector(state => selectStockPredictionsBySymbol(state, symbol))
-  const loadingPredictions = trained && !predictions
+  const [loadingPredictions, setLoadingPredictions] = useState(false)
 
   useEffect(() => {
     if (!symbol) {
@@ -44,28 +42,35 @@ export const StockDetailsView = ({ match }) => {
   }, [symbol])
 
   const onTrain = useCallback(() => {
-    console.log('onTrain')
+    setTraining(true)
     dispatch(getSingleTrain(symbol))
+    setTraining(false)
   }, [symbol])
 
   const onPredictions = useCallback(() => {
+    setLoadingPredictions(true)
     dispatch(getSinglePredictions(symbol))
+    setLoadingPredictions(false)
   }, [])
 
   if (!values) {
     return 'Loading...'
   }
 
+  if (loadingPredictions) {
+    return 'Loading predictions...'
+  }
+
   const content = (
     <ContentContainer>
       <div>
-        <StockChart symbol={symbol} values={values} predictions={predictions}/>
+        <StockChart symbol={symbol} values={values} predictions={trained ? predictions : null}/>
       </div>
       <Footer>
-        <Button type="primary" onClick={onTrain} disabled={training || trained || loadingPredictions}>
+        <Button type="primary" onClick={onTrain} disabled={training}>
           Train
         </Button>
-        {trained &&
+        {trained && !loadingPredictions &&
         <Button type="primary" onClick={onPredictions}>
           Get Predictions
         </Button>

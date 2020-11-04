@@ -43,16 +43,10 @@ export const stocksSlice = createSlice({
     bySymbol: {},
     valuesBySymbol: {},
     predictionsBySymbol: {},
-    training: false,
-    trained: false
+    trainedBySymbol: {}
   },
   reducers: {},
   extraReducers: {
-    [getStocks.pending]: (state, action) => {
-      state.training = false
-      state.trained = false
-      return state
-    },
     [getStocks.fulfilled]: (state, action) => {
       const { data } = action.payload
       const bySymbol = _.reduce(data, (result, symbol, name) => {
@@ -69,18 +63,14 @@ export const stocksSlice = createSlice({
       return state
     },
     [getSingleTrain.pending]: (state, action) => {
-      state.training = true
-      return state
-    },
-    [getSingleTrain.rejected]: (state, action) => {
-      console.log(action)
-      state.training = false
+      const { arg: symbol } = action.meta
+      state.trainedBySymbol[symbol].trained = false
       return state
     },
     [getSingleTrain.fulfilled]: (state, action) => {
+      const { arg: symbol } = action.meta
       const { data } = action.payload
-      state.training = false
-      state.trained = data.trained
+      state.trainedBySymbol[symbol].trained = data.trained
       return state
     },
     [getSinglePredictions.fulfilled]: (state, action) => {
@@ -98,7 +88,6 @@ export const selectStocks = (state) => _.values(state.stocks.bySymbol)
 export const selectStockBySymbol = (state, symbol) => state.stocks.bySymbol[symbol]
 export const selectStockValuesBySymbol = (state, symbol) => state.stocks.valuesBySymbol[symbol]
 export const selectStockPredictionsBySymbol = (state, symbol) => state.stocks.predictionsBySymbol[symbol]
-export const selectTraining = (state) => state.training
-export const selectTrained = (state) => state.trained
+export const selectTrainedBySymbol = (state, symbol) => state.stocks.trainedBySymbol[symbol]
 
 export default stocksSlice.reducer
