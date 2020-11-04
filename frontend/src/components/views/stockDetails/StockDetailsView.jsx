@@ -16,12 +16,32 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   padding: 24px;
+  
+  margin: 0 auto !important;
+  max-width: 900px;
+`
+
+const ChartContainer = styled.div`
+  width: 100%;
+  flex: 0 0 auto; 
 `
 
 const Footer = styled.div`
-   height: 60px;
    display: flex;
    align-items: center;
+   padding-top: 12px
+`
+
+const TrainButton = styled(Button).attrs({
+  type: 'primary'
+})`
+  
+`
+
+const PredictionsButton = styled(Button).attrs({
+  type: 'primary'
+})`
+  margin-left: 12px;
 `
 
 export const StockDetailsView = ({ match }) => {
@@ -41,15 +61,15 @@ export const StockDetailsView = ({ match }) => {
     dispatch(getSingleStock(symbol))
   }, [symbol])
 
-  const onTrain = useCallback(() => {
+  const onTrain = useCallback(async () => {
     setTraining(true)
-    dispatch(getSingleTrain(symbol))
+    await dispatch(getSingleTrain(symbol))
     setTraining(false)
   }, [symbol])
 
-  const onPredictions = useCallback(() => {
+  const onPredictions = useCallback(async () => {
     setLoadingPredictions(true)
-    dispatch(getSinglePredictions(symbol))
+    await dispatch(getSinglePredictions(symbol))
     setLoadingPredictions(false)
   }, [])
 
@@ -57,24 +77,21 @@ export const StockDetailsView = ({ match }) => {
     return 'Loading...'
   }
 
-  if (loadingPredictions) {
-    return 'Loading predictions...'
-  }
-
   const content = (
     <ContentContainer>
-      <div>
+      <ChartContainer>
         <StockChart symbol={symbol} values={values} predictions={trained ? predictions : null}/>
-      </div>
+      </ChartContainer>
       <Footer>
-        <Button type="primary" onClick={onTrain} disabled={training}>
+        <TrainButton onClick={onTrain} disabled={training}>
           Train
-        </Button>
+        </TrainButton>
         {trained && !loadingPredictions &&
-        <Button type="primary" onClick={onPredictions}>
+        <PredictionsButton onClick={onPredictions}>
           Get Predictions
-        </Button>
+        </PredictionsButton>
         }
+        {loadingPredictions && 'Loading predictions...'}
       </Footer>
     </ContentContainer>
   )

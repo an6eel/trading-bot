@@ -1,6 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware')
 
-const target = `https://${process.env.REACT_APP_MAIN_API_BASE}`
+const target = `${process.env.REACT_APP_MAIN_API_BASE}`
 
 module.exports = function(app) {
   app.use(
