@@ -21,7 +21,7 @@ def train_symbol_model(
         forward_days: int = Query(..., title="Forward days model parameter"),
 ):
     try:
-        response = train_model(symbol, look_back, forward_days, Path('models'))
+        response = train_model(symbol, look_back, forward_days)
         return response
     except:
         return {'trained': False}
