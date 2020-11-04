@@ -33,7 +33,8 @@ export const getSingleTrain = createAsyncThunk(
 export const getSinglePredictions = createAsyncThunk(
   Stocks.singlePredictions.type,
   async (symbol, thunkAPI) => {
-    return await instance.get(Stocks.singlePredictions.create(symbol).path)
+    const { path, params } = Stocks.singlePredictions.create(symbol)
+    return await instance.get(path, { params })
   }
 )
 
@@ -64,19 +65,31 @@ export const stocksSlice = createSlice({
     },
     [getSingleTrain.pending]: (state, action) => {
       const { arg: symbol } = action.meta
-      state.trainedBySymbol[symbol].trained = false
+      const obj = state.trainedBySymbol[symbol] || {}
+      obj.trained = false
+      state.trainedBySymbol[symbol] = obj
       return state
     },
     [getSingleTrain.fulfilled]: (state, action) => {
       const { arg: symbol } = action.meta
       const { data } = action.payload
-      state.trainedBySymbol[symbol].trained = data.trained
+      const obj = state.trainedBySymbol[symbol] || {}
+      obj.trained = data.trained
+      state.trainedBySymbol[symbol] = obj
+      return state
+    },
+    [getSingleTrain.rejected]: (state, action) => {
+      console.log(action)
       return state
     },
     [getSinglePredictions.fulfilled]: (state, action) => {
       const { arg: symbol } = action.meta
       const { data } = action.payload
       state.predictionsBySymbol[symbol] = data
+      return state
+    },
+    [getSinglePredictions.rejected]: (state, action) => {
+      console.log(action)
       return state
     }
   }
