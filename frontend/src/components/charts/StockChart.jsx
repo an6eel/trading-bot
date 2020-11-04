@@ -32,14 +32,16 @@ export const StockChart = ({ symbol, values, predictions }) => {
     if (values) {
       datasets.push({
         label: `${symbol} Values`,
-        data: mapStockValues(values)
+        data: mapStockValues(values),
+        borderColor: 'black'
       })
     }
 
     if (predictions) {
       datasets.push({
         label: `${symbol} Predictions`,
-        data: mapStockValues(values)
+        data: mapStockValues(values),
+        borderColor: 'red'
       })
     }
 
